@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require('inquirer');
+const control = require("./controllers/controller.js");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -12,13 +13,28 @@ const connection = mysql.createConnection({
 connection.connect(function(err) {
   if (err) throw err;
   console.log("connected as id " + connection.threadId + "\n");
-  employeeTracker();
+  console.log("************************");
+  console.log("*** EMPLOYEE TRACKER ***");
+  console.log("************************");
+  inquirer.prompt([
+    {
+        type: "list",
+        message: "Please select one of the following:",
+        name: "choice",
+        choices: [
+            "View Departments",
+            "View Roles",
+            "View Employees"
+        ]
+    }]).then(function(response) {
+        if(response.choice == 'View Employees') {control.viewTables(connection, "EMPLOYEE");}
+        if(response.choice == 'View Departments') {control.viewTables(connection, "DEPARTMENT");}
+        if(response.choice == 'View Roles') {control.viewTables(connection, "EMPLOYEE_ROLE");}
+    });
 });
 
-function employeeTracker() {
-  connection.query("SELECT * FROM EMPLOYEE", function(err, res) {
-    if (err) throw err;
-    console.log(res);
-    connection.end();
-  });
-}
+
+
+
+
+
