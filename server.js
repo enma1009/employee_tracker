@@ -1,6 +1,5 @@
 const mysql = require("mysql");
 const inquirer = require('inquirer');
-//const control = require("./controllers/controller.js");
 const cTable = require('console.table');
 
 const connection = mysql.createConnection({
@@ -39,6 +38,7 @@ function startApp() {
           if(response.choice == 'View Departments') {viewTables("DEPARTMENT");}
           if(response.choice == 'View Roles') {viewTables("EMPLOYEE_ROLE");}
           if(response.choice == 'Add New Department') {addDepartment();}
+          if(response.choice == 'Add New Role') {addRole();}
       });
 };
 
@@ -81,11 +81,52 @@ function addDepartment() {
     let queryString = `INSERT INTO DEPARTMENT(DEPARTMENT_NAME) VALUES ('${answer.newDeptName}')`;
     connection.query(queryString, function(err, res) {
         if (err) throw err;
-        console.table(res);
+        //console.table(res);
         console.log("-- Data added --");
         viewTables("DEPARTMENT");
     });
   });  
+}
+
+function addRole() {
+
+  let queryString = "SELECT * FROM DEPARTMENT";
+  connection.query(queryString, function(err, res) {
+  if (err) throw err;
+  let deptChoices = [];
+  res.forEach( function(item, index) {
+    deptChoices.push(`${item.ID} - ${item.DEPARTMENT_NAME}`);
+  });
+  //console.log(deptChoices);
+  inquirer.prompt([
+    {
+      type: "input",
+      name: 'newRoleTitle',
+      message: 'Please enter the title of the new Role:',
+    },
+    {
+      type: "input",
+      name: 'newRoleSalary',
+      message: 'Please enter the salary of the new Role:',
+    },
+    {
+      type: "list",
+      name: 'departmentList',
+      message: 'Please select a Department for the new Role:',
+      choices: deptChoices
+    }
+    ])
+    .then(answer => {
+      const deptId = parseInt(answer.departmentList);
+      let queryString = `INSERT INTO EMPLOYEE_ROLE(TITLE,SALARY,DEPARTMENT_ID) VALUES ('${answer.newRoleTitle}','${answer.newRoleSalary}','${deptId}')`;
+      connection.query(queryString, function(err, res) { 
+          if (err) throw err;
+          //console.table(res);
+          console.log("-- Data added --");
+          viewTables("EMPLOYEE_ROLE");
+      });
+    });  
+  });
 }
 
 
