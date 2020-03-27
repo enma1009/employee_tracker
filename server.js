@@ -7,7 +7,8 @@ const connection = mysql.createConnection({
   port: 8889,
   user: "root",
   password: "root",
-  database: "EMPLOYEE_TRACKER"
+  database: "EMPLOYEE_TRACKER",
+  multipleStatements: true
 });
 
 connection.connect(function(err) {
@@ -39,6 +40,7 @@ function startApp() {
           if(response.choice == 'View Roles') {viewTables("EMPLOYEE_ROLE");}
           if(response.choice == 'Add New Department') {addDepartment();}
           if(response.choice == 'Add New Role') {addRole();}
+          if(response.choice == 'Add New Employee') {addEmployee();}
       });
 };
 
@@ -63,6 +65,7 @@ function viewTables(tableName) {
   queryString += tableName;
   connection.query(queryString, function(err, res) {
   if (err) throw err;
+  console.log("-----------------------------------------------");
   console.table(res);
   console.log("-- End of data --");
   endOrContinue();
@@ -89,7 +92,6 @@ function addDepartment() {
 }
 
 function addRole() {
-
   let queryString = "SELECT * FROM DEPARTMENT";
   connection.query(queryString, function(err, res) {
   if (err) throw err;
@@ -129,6 +131,70 @@ function addRole() {
   });
 }
 
+function addEmployee() {
+  let queryString = "SELECT TITLE, ID FROM EMPLOYEE_ROLE; SELECT TITLE, ID FROM EMPLOYEE_ROLE WHERE TITLE LIKE '%Manager%'";
+  connection.query(queryString, function(err, res) {
+    if (err) throw err;
+    let roleChoices = [];
+    let managerChoices = [];
+    res[0].forEach( function(item, index) {
+      roleChoices.push(`${item.ID} - ${item.TITLE}`);
+    });
+    res[1].forEach( function(item, index) {
+      managerChoices.push(`${item.ID} - ${item.TITLE}`);
+    });
+    managerChoices.push('0 - No manager assigned');
+    //console.log(managerChoices);
+    inquirer.prompt([
+      {
+        type: "input",
+        name: 'firstName',
+        message: "Please enter the employee's first name:",
+      },
+      {
+        type: "input",
+        name: 'lastName',
+        message: "Please enter the employee's last name:",
+      },
+      {
+        type: "list",
+        name: 'roleList',
+        message: "Please enter the employee's role:",
+        choices: roleChoices
+      },
+      {
+        type: "list",
+        name: 'managerList',
+        message: "Please enter the employee's manager:",
+        choices: managerChoices
+      }
+      ])
+      .then(answer => {
+
+        const roleId = parseInt(answer.roleList);
+        const managerId = parseInt(answer.managerList);
+
+        if (managerId == 0) {
+          let queryString = `INSERT INTO EMPLOYEE(FIRST_NAME,LAST_NAME,ROLE_ID) VALUES('${answer.firstName}','${answer.lastName}',${roleId})`;
+          connection.query(queryString, function(err, res) { 
+              if (err) throw err;
+              //console.table(res);
+              console.log("-- Data added --");
+              viewTables("EMPLOYEE");
+          });
+        } else {
+          let queryString = `INSERT INTO EMPLOYEE(FIRST_NAME,LAST_NAME,ROLE_ID,MANAGER_ID) VALUES('${answer.firstName}','${answer.lastName}',${roleId},${managerId})`;
+          connection.query(queryString, function(err, res) { 
+              if (err) throw err;
+              //console.table(res);
+              console.log("-- Data added --");
+              viewTables("EMPLOYEE");
+          });
+        }
+      });  
+  });
+
+}
 
 
 
